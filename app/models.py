@@ -4,11 +4,6 @@
 from app import db
 
 
-director_movie = db.Table('director_movie',
-                          db.Column('director_id', db.Integer, db.ForeignKey('director.director_id')),
-                          db.Column('movie_id', db.Integer, db.ForeignKey('movie.movie_id'))
-                          )
-
 genre_movie = db.Table('genre_movie',
                        db.Column('genre_id', db.Integer, db.ForeignKey('genre.genre_id')),
                        db.Column('movie_id', db.Integer, db.ForeignKey('movie.movie_id'))
@@ -31,7 +26,7 @@ class Director(db.Model):
     director_id = db.Column(db.Integer, primary_key=True)
     f_name = db.Column(db.String(50), nullable=False)
     l_name = db.Column(db.String(50), nullable=False)
-    movies_directed = db.relationship('Movie', secondary=director_movie, backref='directors', lazy='dynamic')
+    directed = db.relationship('Movie', backref='directed_by', lazy='dynamic')
 
     def __repr__(self):
         return f'<Director {self.f_name}, {self.l_name}>'
@@ -48,11 +43,14 @@ class Genre(db.Model):
 class Movie(db.Model):
     movie_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
+    director_id = db.Column(db.Integer, db.ForeignKey('director.director_id', ondelete='SET NULL'))
     date = db.Column(db.Date, nullable=False)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
-    # rating = db.Column(db.Enum(tuple(range(1, 11)), name='ratings'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
     poster_url = db.Column(db.String(100), nullable=False)
+
+    check = db.CheckConstraint('rating <= 10 AND rating >= 0')
 
     def __repr__(self):
         return f'<Director {self.f_name}, {self.l_name}>'
