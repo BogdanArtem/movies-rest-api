@@ -8,6 +8,6 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-from .views import views
+from app import models, views
 
-app.register_blueprint(views, url_prefix='/')
+app.register_blueprint(views.views, url_prefix='/')
