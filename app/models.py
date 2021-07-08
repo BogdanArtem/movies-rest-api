@@ -1,7 +1,32 @@
 """Flask representation of models in database"""
 
 
+from flask import url_for
 from app import db
+
+
+class PaginatedAPIMixin:
+    """Class for generating api links with pagination for set of items """
+    @staticmethod
+    def to_collection_dict(query, page, per_page, endpoint, **kwargs):
+        resources = query.paginate(page, per_page, False)
+        data = {
+            'items': [item.to_dict() for item in resources.items],
+            '_meta': {
+                'page': page,
+                'per_page': per_page,
+                'total_pages': resources.pages,
+                'total_items': resources.total
+            },
+            '_links': {
+                'self': url_for(endpoint, page=page, per_page=per_page, **kwargs),
+                'next': url_for(endpoint, page=page + 1, per_page=per_page, **kwargs) if resources.has_next else None,
+                'prev': url_for(endpoint, page=page - 1, per_page=per_page, **kwargs) if resources.has_prev else None
+            }
+        }
+        return data
+
+
 
 
 genre_movie = db.Table('genre_movie',
@@ -10,13 +35,28 @@ genre_movie = db.Table('genre_movie',
                        )
 
 
-class User(db.Model):
+class User(PaginatedAPIMixin, db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     f_name = db.Column(db.String(50), nullable=False)
     l_name = db.Column(db.String(50), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
     pass_hash = db.Column(db.String(128), nullable=False)
     movies = db.relationship('Movie', backref='user_added', lazy='dynamic')
+
+    def to_dict(self):
+        data = {
+            'id': self.user_id,
+            'name': self.f_name,
+            'surname': self.l_name,
+            'is_admin': self.is_admin,
+            #'password': self.pass_hash,
+            'movies_count': self.movies.count(),
+            '_links': {
+                'self': url_for('api.get_user', id=self.user_id),
+                'movies': url_for('api.get_user_movies', id=self.user_id),
+            }
+        }
+        return data
 
     def __repr__(self):
         return f'<User {self.f_name}, {self.l_name}>'
