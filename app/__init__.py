@@ -10,4 +10,6 @@ migrate = Migrate(app, db)
 
 from app import models, views
 
+from app.api import bp as api_bp
+app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(views.views, url_prefix='/')
