@@ -9,7 +9,9 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 from app import models, views
+from app.swagger import swaggerui_blueprint
 
 from app.api import bp as api_bp
 app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(views.views, url_prefix='/')
+app.register_blueprint(swaggerui_blueprint)
