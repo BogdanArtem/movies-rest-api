@@ -28,8 +28,6 @@ class PaginatedAPIMixin:
         return data
 
 
-
-
 genre_movie = db.Table('genre_movie',
                        db.Column('genre_id', db.Integer, db.ForeignKey('genre.genre_id')),
                        db.Column('movie_id', db.Integer, db.ForeignKey('movie.movie_id'))
@@ -76,11 +74,29 @@ class User(PaginatedAPIMixin, db.Model):
         return f'<User {self.username}, {self.email}>'
 
 
-class Director(db.Model):
+class Director(PaginatedAPIMixin, db.Model):
     director_id = db.Column(db.Integer, primary_key=True)
     f_name = db.Column(db.String(50), nullable=False)
     l_name = db.Column(db.String(50), nullable=False)
     directed = db.relationship('Movie', backref='directed_by', lazy='dynamic')
+
+    def to_dict(self):
+        data = {
+            'id': self.director_id,
+            'name': self.f_name,
+            'surname': self.l_name,
+            'movies_count': self.directed.count(),
+            '_links': {
+                'self': url_for('api.get_director', id=self.director_id),
+                'movies': url_for('api.get_director_movies', id=self.director_id),
+            }
+        }
+        return data
+
+    def from_dict(self, data):
+        for field in ['f_name', 'l_name']:
+            if field in data:
+                setattr(self, field, data[field])
 
     def __repr__(self):
         return f'<Director {self.f_name}, {self.l_name}>'
