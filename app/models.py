@@ -1,6 +1,7 @@
 """Flask representation of models in database"""
 
 
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask import url_for
 from app import db
 
@@ -37,17 +38,23 @@ genre_movie = db.Table('genre_movie',
 
 class User(PaginatedAPIMixin, db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
-    f_name = db.Column(db.String(50), nullable=False)
-    l_name = db.Column(db.String(50), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
     pass_hash = db.Column(db.String(128), nullable=False)
     movies = db.relationship('Movie', backref='user_added', lazy='dynamic')
 
+    def set_password(self, password):
+        self.pass_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.pass_hash, password)
+
     def to_dict(self):
         data = {
             'id': self.user_id,
-            'name': self.f_name,
-            'surname': self.l_name,
+            'username': self.username,
+            'email': self.email,
             'is_admin': self.is_admin,
             #'password': self.pass_hash,
             'movies_count': self.movies.count(),
@@ -58,8 +65,15 @@ class User(PaginatedAPIMixin, db.Model):
         }
         return data
 
+    def from_dict(self, data, new_user=False):
+        for field in ['username', 'email']:
+            if field in data:
+                setattr(self, field, data[field])
+            if new_user and 'password' in data:
+                self.set_password(data['password'])
+
     def __repr__(self):
-        return f'<User {self.f_name}, {self.l_name}>'
+        return f'<User {self.username}, {self.email}>'
 
 
 class Director(db.Model):
