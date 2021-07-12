@@ -5,7 +5,7 @@ from app import db
 
 @app.shell_context_processor
 def make_shell_context():
-    return {'db': db, 'user': User, 'director': Director, 'genre': Genre, 'movie': Movie}
+    return {'db': db, 'User': User, 'Director': Director, 'Genre': Genre, 'Movie': Movie}
 
 
 if __name__ == '__main__':
