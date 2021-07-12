@@ -8,6 +8,10 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-from .views import views
+from app import models, views
+from app.swagger import swaggerui_blueprint
 
-app.register_blueprint(views, url_prefix='/')
+from app.api import bp as api_bp
+app.register_blueprint(api_bp, url_prefix='/api')
+app.register_blueprint(views.views, url_prefix='/')
+app.register_blueprint(swaggerui_blueprint)
