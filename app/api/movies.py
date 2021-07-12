@@ -3,6 +3,7 @@ from app.api import bp
 from app import db
 from app.api.errors import bad_request
 from app.models import Movie
+from app.api.auth import token_auth
 
 
 @bp.route('/movies/<int:id>', methods=['GET'])
@@ -29,6 +30,7 @@ def get_movie_genres(id):
 
 
 @bp.route('/movies', methods=['POST'])
+@token_auth.login_required
 def create_movie():
     data = request.get_json() or {}
     if 'director_id' not in data or 'user_id' not in data or 'date' not in data or\
@@ -49,6 +51,7 @@ def create_movie():
 
 
 @bp.route('/movies/<int:id>', methods=['PUT'])
+@token_auth.login_required
 def update_movie(id):
     movie = Movie.query.get_or_404(id)
     data = request.get_json() or {}
@@ -61,6 +64,7 @@ def update_movie(id):
 
 
 @bp.route('/movies/<int:id>', methods=['DELETE'])
+@token_auth.login_required
 def delete_movie(id):
     movie = Movie.query.get_or_404(id)
     db.session.delete(movie)
