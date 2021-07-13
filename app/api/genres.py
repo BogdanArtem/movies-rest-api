@@ -42,7 +42,7 @@ def create_genre():
     db.session.commit()
     response = jsonify(genre.to_dict())
     response.status_code = 201
-    response.headers['Location'] = url_for('api.get_user', id=genre.genre_id)
+    response.headers['Location'] = url_for('api.get_user', id=genre.id)
     return response
 
 

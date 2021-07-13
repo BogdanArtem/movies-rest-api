@@ -1,4 +1,4 @@
-from flask import jsonify, request, url_for
+from flask import jsonify, request, url_for, render_template, current_app
 from app.api import bp
 from app import db
 from app.api.errors import bad_request
@@ -7,7 +7,6 @@ from app.models import Movie
 
 @bp.route('/movies/<int:id>', methods=['GET'])
 def get_movie(id):
-    print(id)
     return jsonify(Movie.query.get_or_404(id).to_dict())
 
 
@@ -16,6 +15,15 @@ def get_movies():
     page = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 10, type=int), 100)
     data = Movie.to_collection_dict(Movie.query, page, per_page, 'api.get_users')
+    return jsonify(data)
+
+
+@bp.route('/movies/search/<string:q>', methods=['GET'])
+def search(q):
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    matches, total = Movie.search(q, page, per_page)
+    data = Movie.to_collection_dict(matches, page, per_page, 'api.search', q=q)
     return jsonify(data)
 
 
@@ -44,7 +52,7 @@ def create_movie():
     db.session.commit()
     response = jsonify(movie.to_dict())
     response.status_code = 201
-    response.headers['Location'] = url_for('api.get_movie', id=movie.movie_id)
+    response.headers['Location'] = url_for('api.get_movie', id=movie.id)
     return response
 
 

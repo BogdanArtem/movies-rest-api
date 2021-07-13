@@ -41,7 +41,7 @@ def create_director():
     db.session.add(director)
     response = jsonify(director.to_dict())
     response.status_code = 201
-    response.headers['Location'] = url_for('api.get_director', id=director.director_id)
+    response.headers['Location'] = url_for('api.get_director', id=director.id)
     db.session.commit()
     return response
 
