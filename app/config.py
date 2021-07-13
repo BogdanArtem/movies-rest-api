@@ -7,3 +7,4 @@ class Config:
             'postgresql://' + os.path.join('postgres:pass@localhost:5432/postgres')
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     SERVER_NAME = 'localhost:5000'
+    ELASTICSEARCH_URL = 'http://localhost:9200'#os.environ.get('ELASTICSEARCH_URL')
