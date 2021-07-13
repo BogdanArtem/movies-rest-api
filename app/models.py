@@ -4,6 +4,46 @@
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import url_for
 from app import db
+from app.search import add_to_index, remove_from_index, query_index
+
+
+class SearchableMixin(object):
+    @classmethod
+    def search(cls, expression, page, per_page):
+        ids, total = query_index(cls.__tablename__, expression, page, per_page)
+        if total == 0:
+            return cls.query.filter_by(id=0), 0
+        when = []
+        for i in range(len(ids)):
+            when.append((ids[i], i))
+        return cls.query.filter(cls.id.in_(ids)).order_by(
+            db.case(when, value=cls.id)), total
+
+    @classmethod
+    def before_commit(cls, session):
+        session._changes = {
+            'add': list(session.new),
+            'update': list(session.dirty),
+            'delete': list(session.deleted)
+        }
+
+    @classmethod
+    def after_commit(cls, session):
+        for obj in session._changes['add']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['update']:
+            if isinstance(obj, SearchableMixin):
+                add_to_index(obj.__tablename__, obj)
+        for obj in session._changes['delete']:
+            if isinstance(obj, SearchableMixin):
+                remove_from_index(obj.__tablename__, obj)
+        session._changes = None
+
+    @classmethod
+    def reindex(cls):
+        for obj in cls.query:
+            add_to_index(cls.__tablename__, obj)
 
 
 class PaginatedAPIMixin:
@@ -29,13 +69,13 @@ class PaginatedAPIMixin:
 
 
 genre_movie = db.Table('genre_movie',
-                       db.Column('genre_id', db.Integer, db.ForeignKey('genre.genre_id')),
-                       db.Column('movie_id', db.Integer, db.ForeignKey('movie.movie_id'))
+                       db.Column('genre_id', db.Integer, db.ForeignKey('genre.id')),
+                       db.Column('movie_id', db.Integer, db.ForeignKey('movie.id'))
                        )
 
 
 class User(PaginatedAPIMixin, db.Model):
-    user_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
@@ -50,15 +90,15 @@ class User(PaginatedAPIMixin, db.Model):
 
     def to_dict(self):
         data = {
-            'id': self.user_id,
+            'id': self.id,
             'username': self.username,
             'email': self.email,
             'is_admin': self.is_admin,
             #'password': self.pass_hash,
             'movies_count': self.movies.count(),
             '_links': {
-                'self': url_for('api.get_user', id=self.user_id),
-                'movies': url_for('api.get_user_movies', id=self.user_id),
+                'self': url_for('api.get_user', id=self.id),
+                'movies': url_for('api.get_user_movies', id=self.id),
             }
         }
         return data
@@ -75,20 +115,20 @@ class User(PaginatedAPIMixin, db.Model):
 
 
 class Director(PaginatedAPIMixin, db.Model):
-    director_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     f_name = db.Column(db.String(50), nullable=False)
     l_name = db.Column(db.String(50), nullable=False)
     directed = db.relationship('Movie', backref='directed_by', lazy='dynamic')
 
     def to_dict(self):
         data = {
-            'id': self.director_id,
+            'id': self.id,
             'name': self.f_name,
             'surname': self.l_name,
             'movies_count': self.directed.count(),
             '_links': {
-                'self': url_for('api.get_director', id=self.director_id),
-                'movies': url_for('api.get_director_movies', id=self.director_id),
+                'self': url_for('api.get_director', id=self.id),
+                'movies': url_for('api.get_director_movies', id=self.id),
             }
         }
         return data
@@ -103,7 +143,7 @@ class Director(PaginatedAPIMixin, db.Model):
 
 
 class Genre(PaginatedAPIMixin, db.Model):
-    genre_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     movies = db.relationship('Movie', secondary=genre_movie,
                              # primary_join=(genre_movie.c.genre_id == genre_id),
@@ -112,7 +152,7 @@ class Genre(PaginatedAPIMixin, db.Model):
 
     def to_dict(self):
         data = {
-            'id': self.genre_id,
+            'id': self.id,
             'name': self.name,
         }
         return data
@@ -126,10 +166,11 @@ class Genre(PaginatedAPIMixin, db.Model):
         return f'<Genre {self.name}>'
 
 
-class Movie(PaginatedAPIMixin, db.Model):
-    movie_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    director_id = db.Column(db.Integer, db.ForeignKey('director.director_id', ondelete='SET NULL'))
+class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
+    __searchable__ = ['name', 'description']
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    director_id = db.Column(db.Integer, db.ForeignKey('director.id', ondelete='SET NULL'))
     date = db.Column(db.Date, nullable=False)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
@@ -140,7 +181,7 @@ class Movie(PaginatedAPIMixin, db.Model):
 
     def to_dict(self):
         data = {
-            'id': self.movie_id,
+            'id': self.id,
             'name': self.name,
             'date': self.date,
             'description': self.description,
