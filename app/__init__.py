@@ -1,11 +1,11 @@
-from .config import Config
+from .config import ConfigDev
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from elasticsearch import Elasticsearch
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config.from_object(ConfigDev)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
