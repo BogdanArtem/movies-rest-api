@@ -3,6 +3,7 @@ from app.api import bp
 from app import db
 from app.api.errors import bad_request
 from app.models import Genre
+from app.api.auth import token_auth
 
 
 @bp.route('/genres/<int:id>', methods=['GET'])
@@ -28,6 +29,7 @@ def get_genre_movies(id):
 
 
 @bp.route('/genres', methods=['POST'])
+@token_auth.login_required
 def create_genre():
     data = request.get_json() or {}
     if 'name' not in data:
@@ -47,6 +49,7 @@ def create_genre():
 
 
 @bp.route('/genres/<int:id>', methods=['PUT'])
+@token_auth.login_required
 def update_genre(id):
     user = Genre.query.get_or_404(id)
     data = request.get_json() or {}
@@ -59,6 +62,7 @@ def update_genre(id):
 
 
 @bp.route('/genres/<int:id>', methods=['DELETE'])
+@token_auth.login_required
 def delete_genre(id):
     genre = Genre.query.get_or_404(id)
     db.session.delete(genre)

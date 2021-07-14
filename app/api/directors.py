@@ -3,6 +3,7 @@ from app.api import bp
 from app import db
 from app.api.errors import bad_request
 from app.models import Director
+from app.api.auth import token_auth
 
 
 @bp.route('/directors/<int:id>', methods=['GET'])
@@ -28,6 +29,7 @@ def get_director_movies(id):
 
 
 @bp.route('/directors', methods=['POST'])
+@token_auth.login_required
 def create_director():
     data = request.get_json() or {}
     if 'f_name' not in data or 'l_name' not in data:
@@ -47,6 +49,7 @@ def create_director():
 
 
 @bp.route('/directors/<int:id>', methods=['PUT'])
+@token_auth.login_required
 def update_director(id):
     director = Director.query.get_or_404(id)
     data = request.get_json() or {}
@@ -60,6 +63,7 @@ def update_director(id):
 
 
 @bp.route('/directors/<int:id>', methods=['DELETE'])
+@token_auth.login_required
 def delete_director(id):
     director = Director.query.get_or_404(id)
     db.session.delete(director)

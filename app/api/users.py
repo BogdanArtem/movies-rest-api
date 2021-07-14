@@ -3,6 +3,7 @@ from app.api import bp
 from app import db
 from app.api.errors import bad_request
 from app.models import User
+from app.api.auth import token_auth
 
 
 @bp.route('/users/<int:id>', methods=['GET'])
@@ -49,6 +50,7 @@ def create_user():
 
 
 @bp.route('/users/<int:id>', methods=['PUT'])
+@token_auth.login_required
 def update_user(id):
     movie = User.query.get_or_404(id)
     data = request.get_json() or {}
@@ -61,6 +63,7 @@ def update_user(id):
 
 
 @bp.route('/users/<int:id>', methods=['DELETE'])
+@token_auth.login_required
 def delete_user(id):
     user = User.query.get_or_404(id)
     db.session.delete(user)
