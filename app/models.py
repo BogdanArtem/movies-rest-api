@@ -229,3 +229,7 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
 
     def __repr__(self):
         return f'<Movie {self.name}>'
+
+
+db.event.listen(db.session, 'before_commit', Movie.before_commit)
+db.event.listen(db.session, 'after_commit', Movie.after_commit)

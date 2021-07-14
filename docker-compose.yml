@@ -49,6 +49,12 @@ services:
       - .env
     ports:
       - "9200:9200"
+    healthcheck:
+      test: "curl http://elasticsearch:9200"
+      interval: "1s"
+      timeout: "3s"
+      retries: 60
+
 
 volumes:
   postgres_volume:

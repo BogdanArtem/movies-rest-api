@@ -1,6 +1,14 @@
+from retrying import retry
 from flask import current_app
+from elasticsearch.exceptions import ConnectionError
 
 
+def retry_if_connection_error(exception):
+    """Return True if we should retry (in this case when it's an IOError), False otherwise"""
+    return isinstance(exception, ConnectionError)
+
+# Retry to allow elasticsearch container start
+@retry(retry_on_exception=retry_if_connection_error, stop_max_attempt_number=20, wait_fixed=2000)
 def add_to_index(index, model):
     if not current_app.elasticsearch:
         return
