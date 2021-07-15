@@ -18,6 +18,8 @@ elasticsearch = "*"
 gunicorn = "*"
 importlib-metadata = "*"
 retrying = "*"
+pylint-flask = "*"
+pylint = "*"
 
 [dev-packages]
 

@@ -30,17 +30,18 @@ curl -X POST http://0.0.0.0:80/api/movies -H 'Content-Type: application/json' -H
 
 ### Edit An Existing Record (authorized users only)
 ```bash
-curl -X PUT http://0.0.0.0:80/api/movies -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"id": "name": "Zombie-dinosaur attack ", "director_id": 1, "date":"1978-01-01", "description": "One of the worst movies I have ever seen", "rating":3, "poster_url": "www.posters.com", "user_id": 1}'
+curl -X PUT http://0.0.0.0:80/api/movies/4 -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"name": "Zombie-dinosaur epic attack"}'
+
 ```
 
 ### Find Edited Record
 ```bash
 curl -X GET http://0.0.0.0:80/api/movies/search/dinosaur
-curl -X GET http://0.0.0.0:80/api/movies/search/attack
+curl -X GET http://0.0.0.0:80/api/movies/search/epic
 curl -X GET http://0.0.0.0:80/api/movies/search/mythical%20artefact
 ```
 
 ### Delete A Record (authorized users only)
 ```bash
-curl -X DELETE http://0.0.0.0:80/api/movies/ id -H 'Authorization:Bearer place_for_your_token'
+curl -X DELETE http://0.0.0.0:80/api/movies/4 -H 'Authorization:Bearer place_for_your_token'
 ```

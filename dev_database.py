@@ -1,12 +1,19 @@
+"""Dummy database for development"""
+
+
+from werkzeug.security import generate_password_hash
 from app import db
 from app import app
 from app.models import User, Genre, Movie, Director
-from werkzeug.security import generate_password_hash
+
 
 with app.app_context():
-    usr1 = User(username='Alex', email='timsmith@gmail.com', is_admin=True, pass_hash=generate_password_hash('12345'))
-    usr2 = User(username='Gim', email='Gim@gmail.com', is_admin=False, pass_hash=generate_password_hash('12345'))
-    usr3 = User(username='Donald', email='Donald@gmail.com', is_admin=False, pass_hash=generate_password_hash('12345'))
+    usr1 = User(username='Alex', email='timsmith@gmail.com',
+                is_admin=True, pass_hash=generate_password_hash('12345'))
+    usr2 = User(username='Gim', email='Gim@gmail.com',
+                is_admin=False, pass_hash=generate_password_hash('12345'))
+    usr3 = User(username='Donald', email='Donald@gmail.com',
+                is_admin=False, pass_hash=generate_password_hash('12345'))
 
     db.session.add(usr1)
     db.session.add(usr2)

@@ -1,11 +1,17 @@
+"""Flask configuration classes"""
+
+
 import os
+
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 class ConfigDev:
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI') #or 'postgresql://postgres:root@db:5432/postgres'
-    SQLALCHEMY_TRACK_MODIFICATIONS = True
-    SECRET_KEY = os.getenv('SECRET_KEY') or 'you-will-never-guess'
-    SERVER_NAME = '0.0.0.0:80'
+    """Configuration settings for development"""
+    DEBUG = os.getenv('DEBUG')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
+    SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS')
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    SERVER_NAME = os.getenv('SERVER_NAME')
     ELASTICSEARCH_URL = os.getenv('ELASTICSEARCH_URL')
