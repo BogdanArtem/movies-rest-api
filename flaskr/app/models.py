@@ -1,5 +1,6 @@
 """Flask representation of models in database"""
 
+
 import os
 import base64
 from datetime import datetime, timedelta
@@ -88,8 +89,8 @@ genre_movie = db.Table('genre_movie',
 class User(PaginatedAPIMixin, db.Model):
     """User model with support of authentication and pagination"""
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(128), nullable=False)
+    username = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    email = db.Column(db.String(128), nullable=False, index=True, unique=True)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
     pass_hash = db.Column(db.String(128), nullable=False)
     movies = db.relationship('Movie', backref='user_added', lazy='dynamic')
@@ -171,7 +172,7 @@ class Director(PaginatedAPIMixin, db.Model):
             'movies_count': self.directed.count(),
             '_links': {
                 'self': url_for('api.get_director', item_id=self.id),
-                'movies': url_for('api.get_director_movies', item_i=self.id),
+                'movies': url_for('api.get_director_movies', item_id=self.id),
             }
         }
         return data
@@ -220,12 +221,10 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     director_id = db.Column(db.Integer, db.ForeignKey('director.id', ondelete='SET NULL'))
     date = db.Column(db.Date, nullable=False)
-    name = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.Text)
-    rating = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    description = db.Column(db.Text, index=True)
+    rating = db.Column(db.Integer, db.CheckConstraint('rating <= 10 AND rating >= 0'), nullable=False)
     poster_url = db.Column(db.String(100), nullable=False)
-
-    check = db.CheckConstraint('rating <= 10 AND rating >= 0')
 
     def to_dict(self):
         """Convert object to dictionary"""
@@ -250,7 +249,11 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
         """Convert dictionary to object"""
         for field in ['name', 'date', 'description', 'rating',
                       'user', 'director_id', 'user_id', 'poster_url']:
-            if field in data:
+            # Sqlite fix
+            if field in data and field == 'date':
+                date = datetime.strptime(data[field], '%Y-%m-%d')
+                setattr(self, field, date)
+            elif field in data:
                 setattr(self, field, data[field])
 
     def __repr__(self):

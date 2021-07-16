@@ -5,16 +5,16 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from elasticsearch import Elasticsearch
 from flask_migrate import Migrate
-from .config import ConfigDev
+from .config import config
 
 db = SQLAlchemy()
 migrate = Migrate()
 
 
-def create_app():
+def create_app(conf_name):
     """Application factory pattern"""
     app = Flask(__name__)
-    app.config.from_object(ConfigDev)
+    app.config.from_object(config[conf_name])
 
     db.init_app(app)
     migrate.init_app(app)
