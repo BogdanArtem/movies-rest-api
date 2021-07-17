@@ -7,7 +7,6 @@ from app import create_app, db
 from werkzeug.datastructures import Headers
 
 
-
 @pytest.fixture
 def client():
     app = create_app('testing')
@@ -20,10 +19,10 @@ def client():
 
 
 def test_get_unauthorized(client):
-    req1 = client.get('/api/genres')
-    req2 = client.get('/api/genres/1')
-    req3 = client.get('/api/genres/2')
-    req4 = client.get('/api/genres/3')
+    req1 = client.get('/api/directors')
+    req2 = client.get('/api/directors/1')
+    req3 = client.get('/api/directors/2')
+    req4 = client.get('/api/directors/3')
 
     assert '200' in req1.status
     assert '200' in req2.status
@@ -31,9 +30,9 @@ def test_get_unauthorized(client):
     assert '200' in req4.status
 
 
-def test_add_new_genre(client):
+def test_add_new_director(client):
     """Create new genre by anonymous user"""
-    req1 = client.post(path='api/genres', json={'name': 'Fantasy'})
+    req1 = client.post(path='api/directors', json={'f_name': 'Jim', 'l_name': 'Berns'})
     assert '401' in req1.status
 
     req2 = client.post(path='api/tokens', auth=('Alex', 12345))
@@ -70,13 +69,10 @@ def test_add_same_genre(client):
     """Create users with same email and username"""
     genre = {'name': 'Cars'}
 
-    req1 = client.post(path='api/tokens', auth=('Alex', 12345))
-    token = req1.json['token']
-
-    req2 = client.post('api/genres', headers={'Authorization': 'Bearer ' + token}, json=genre)
-    assert '201' in req2.status
+    req1 = client.post('api/genres', json=genre)
+    assert '201' in req1.status
 
     # Add user with repeating username
-    req3 = client.post('api/genres', headers={'Authorization': 'Bearer ' + token}, json=genre)
-    assert '400' in req3.status
+    req2 = client.post('api/genres', json=genre)
+    assert '400' in req2.status
 
