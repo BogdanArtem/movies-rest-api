@@ -195,3 +195,33 @@ def test_add_same_users(client):
 
     req3 = client.post('api/movies', json=movie, headers={'Authorization': 'Bearer ' + token})
     assert '400' in req3.status
+
+
+def test_director_deletion(client):
+    """Delete director for existing movie"""
+    # Get tokens
+    req1 = client.post(path='api/tokens', auth=('Alex', 12345))
+    token = req1.json['token']
+
+    # Delete director and check movie
+    req2 = client.get('api/directors/2')
+    assert '200' in req2.status
+    req3 = client.delete(path='api/directors/2', headers={'Authorization': 'Bearer ' + token})
+    req4 = client.get('api/movies/1')
+
+    assert 'unknown' in req4.json['_links']['director']
+
+
+def test_user_deletion(client):
+    """Delete user for existing movie"""
+    # Get tokens
+    req1 = client.post(path='api/tokens', auth=('Alex', 12345))
+    token = req1.json['token']
+
+    # Delete director and check movie
+    req2 = client.get('api/users/2')
+    assert '200' in req2.status
+    req3 = client.delete(path='api/users/2', headers={'Authorization': 'Bearer ' + token})
+    req4 = client.get('api/movies/1')
+
+    assert 'unknown' in req4.json['_links']['user']

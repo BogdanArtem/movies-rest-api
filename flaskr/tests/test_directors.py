@@ -67,12 +67,14 @@ def test_update_genre(client):
 
 def test_add_same_genre(client):
     """Create users with same email and username"""
-    genre = {'name': 'Cars'}
+    data = {'name': 'Cars'}
 
-    req1 = client.post('api/genres', json=genre)
-    assert '201' in req1.status
+    req1 = client.post(path='api/tokens', auth=('Alex', 12345))
+    token = req1.json['token']
+
+    req2 = client.post('api/genres', json=data, headers={'Authorization': 'Bearer ' + token})
+    assert '201' in req2.status
 
     # Add user with repeating username
-    req2 = client.post('api/genres', json=genre)
-    assert '400' in req2.status
-
+    req3 = client.post('api/genres', json=data, headers={'Authorization': 'Bearer ' + token})
+    assert '400' in req3.status

@@ -1,6 +1,5 @@
 """Flask representation of models in database"""
 
-
 import os
 import base64
 from datetime import datetime, timedelta
@@ -12,6 +11,7 @@ from app.search import add_to_index, remove_from_index, query_index
 
 class SearchableMixin:
     """This class allows maintaining indexes for elasticsearch"""
+
     @classmethod
     def search(cls, expression, page, per_page):
         """Adds search in elasticsearch index from model"""
@@ -218,13 +218,13 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
     """Movie model with searchable fields and constraints"""
     __searchable__ = ['name', 'description']
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     director_id = db.Column(db.Integer, db.ForeignKey('director.id', ondelete='SET NULL'))
     date = db.Column(db.Date, nullable=False)
     name = db.Column(db.String(50), nullable=False, index=True, unique=True)
     description = db.Column(db.Text, index=True)
     rating = db.Column(db.Integer, db.CheckConstraint('rating <= 10 AND rating >= 0'), nullable=False)
-    poster_url = db.Column(db.String(100), nullable=False)
+    poster_url = db.Column(db.Text, nullable=False)
 
     def to_dict(self):
         """Convert object to dictionary"""
@@ -236,10 +236,10 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
             'rating': self.rating,
             'user': self.user_id,
             '_links': {
-                'self': url_for('api.get_director', item_id=self.director_id),
-                'user': url_for('api.get_director_movies', item_id=self.director_id),
-                'director': url_for('api.get_director_movies', item_id=self.director_id),
-                # 'genres'
+                'director': 'unknown' if self.director_id is None else
+                url_for('api.get_director', item_id=self.director_id),
+                'user': 'unknown' if self.user_id is None else
+                url_for('api.get_user', item_id=self.user_id),
                 'poster_url': self.poster_url
             }
         }

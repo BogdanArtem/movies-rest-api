@@ -9,7 +9,7 @@ from app.models import User, Genre, Movie, Director
 
 def init_database():
     """Create dummy development databse"""
-    with app.app_context():
+    with current_app.app_context():
         db.create_all()
 
         usr1 = User(username='Alex', email='timsmith@gmail.com',
