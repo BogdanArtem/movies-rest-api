@@ -25,16 +25,6 @@ def get_movies():
     return jsonify(data)
 
 
-@bp.route('/movies/search/<string:inquiry>', methods=['GET'])
-def search(inquiry):
-    """Return all matches of name and description from elasticsearch index with pagination"""
-    page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 10, type=int), 100)
-    matches, _ = Movie.search(inquiry, page, per_page)
-    data = Movie.to_collection_dict(matches, page, per_page, 'api.search', inquiry=inquiry)
-    return jsonify(data)
-
-
 @bp.route('/movies/<int:item_id>/genres', methods=['GET'])
 def get_movie_genres(item_id):
     """Find all genres related to movie with pagination"""
@@ -60,18 +50,30 @@ def create_movie():
 
     movie = Movie()
     movie.from_dict(data)
-
+    db.session.add(movie)
+    # Check that constraint is not violated
     try:
-        db.session.add(movie)
         db.session.commit()
     except IntegrityError:
         return bad_request("Please, check rating is in range from 1 to 10")
 
     db.session.commit()
     response = jsonify(movie.to_dict())
+    # Add 'created' response code
     response.status_code = 201
     response.headers['Location'] = url_for('api.get_movie', item_id=movie.id)
     return response
+
+
+@bp.route('/movies/search', methods=['POST'])
+def search():
+    """Return all matches of name and description from elasticsearch index with pagination"""
+    inquiry = request.get_json() or {}
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    matches, _ = Movie.search(inquiry, page, per_page)
+    data = Movie.to_collection_dict(matches, page, per_page, 'api.search')
+    return jsonify(data)
 
 
 @bp.route('/movies/<int:item_id>', methods=['PUT'])

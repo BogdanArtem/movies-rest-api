@@ -3,7 +3,7 @@
 import click
 
 from flask import current_app
-from app.dev_database import init_database
+from app.dev_database import init_db
 from app import db
 
 
@@ -20,4 +20,4 @@ def register(app):
     @seed.command()
     def init():
         """DB initialization"""
-        init_database()
+        init_db()

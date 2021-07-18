@@ -2,10 +2,9 @@ import os
 import base64
 import pytest
 from app.models import User, Director, Movie, Genre
-from database import init_db
+from app.dev_database import init_db
 from app import create_app, db
 from werkzeug.datastructures import Headers
-
 
 
 @pytest.fixture
@@ -80,3 +79,51 @@ def test_add_same_genre(client):
     req3 = client.post('api/genres', headers={'Authorization': 'Bearer ' + token}, json=genre)
     assert '400' in req3.status
 
+
+def test_many_to_many(client):
+    """Check many to many relationship between genre and movie"""
+    req1 = client.get('api/genres/1')
+    assert '200' in req1.status
+    assert 2 == req1.json['genres_count']
+
+    req2 = client.get('api/genres/3')
+    assert '200' in req2.status
+    assert 1 == req2.json['genres_count']
+
+    movie1 = {
+        'name': 'Twilight',
+        'director_id': '1',
+        'date': '1999-01-02',
+        'description': 'This movie is simply awesome',
+        'rating': '9',
+        'poster_url': 'www.poster.com',
+        'user_id': '1',  # Alex id
+        'genres': ['1', '3']
+    }
+
+    # Get tokens
+    req3 = client.post(path='api/tokens', auth=('Alex', 12345))
+    token = req3.json['token']
+
+    req4 = client.post('api/movies', headers={'Authorization': 'Bearer ' + token}, json=movie1)
+    assert '201' in req4.status
+
+    req5 = client.get('api/genres/1')
+    assert '200' in req5.status
+    assert 3 == req5.json['genres_count'] # +1
+
+    req6 = client.get('api/genres/3')
+    assert '200' in req6.status
+    assert 2 == req6.json['genres_count'] # +1
+
+    req7 = client.get('api/users/5')
+    assert '200' in req7.status
+    # assert 2 == req7.json['']
+
+    #
+    # assert 1 in req4.json['genres']
+    # assert 2 in req4.json['genres']
+    #
+    # req1 = client.get('api/genres/1')
+    # assert '200' in req1.status
+    # assert 3 == req1.json['genres_count']

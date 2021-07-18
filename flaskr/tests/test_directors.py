@@ -2,7 +2,7 @@ import os
 import base64
 import pytest
 from app.models import User, Director, Movie, Genre
-from database import init_db
+from app.dev_database import init_db
 from app import create_app, db
 from werkzeug.datastructures import Headers
 
