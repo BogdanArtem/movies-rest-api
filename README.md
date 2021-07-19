@@ -45,3 +45,15 @@ curl -X GET http://0.0.0.0:5000/api/movies/search/mythical%20artefact
 ```bash
 curl -X DELETE http://0.0.0.0:5000/api/movies/4 -H 'Authorization:Bearer place_for_your_token'
 ```
+
+### Test Output
+```bash
+$ pytest
+tests/test_directors.py .....                                                                                                      [ 21%]
+tests/test_genres.py .....                                                                                                         [ 43%]
+tests/test_movies.py ........                                                                                                      [ 78%]
+tests/test_users.py .....                                                                                                          [100%]
+
+==================================================== 23 passed, 23 warnings in 49.31s ====================================================
+
+```

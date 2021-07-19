@@ -20,6 +20,7 @@ importlib-metadata = "*"
 retrying = "*"
 pylint-flask = "*"
 pylint = "*"
+typing-extensions = "*"
 
 [dev-packages]
 

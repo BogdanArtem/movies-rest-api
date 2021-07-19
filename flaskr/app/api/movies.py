@@ -2,9 +2,10 @@
 
 
 from flask import jsonify, request, url_for
+from sqlalchemy.exc import IntegrityError
 from app.api import bp
 from app import db
-from app.api.errors import bad_request
+from app.api.errors import bad_request, error_response
 from app.models import Movie
 from app.api.auth import token_auth
 
@@ -21,16 +22,6 @@ def get_movies():
     page = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 10, type=int), 100)
     data = Movie.to_collection_dict(Movie.query, page, per_page, 'api.get_movies')
-    return jsonify(data)
-
-
-@bp.route('/movies/search/<string:inquiry>', methods=['GET'])
-def search(inquiry):
-    """Return all matches of name and description from elasticsearch index with pagination"""
-    page = request.args.get('page', 1, type=int)
-    per_page = min(request.args.get('per_page', 10, type=int), 100)
-    matches, _ = Movie.search(inquiry, page, per_page)
-    data = Movie.to_collection_dict(matches, page, per_page, 'api.search', inquiry=inquiry)
     return jsonify(data)
 
 
@@ -59,27 +50,47 @@ def create_movie():
 
     movie = Movie()
     movie.from_dict(data)
-
     db.session.add(movie)
+    # Check that constraint is not violated
+    try:
+        db.session.commit()
+    except IntegrityError:
+        return bad_request("Please, check rating is in range from 1 to 10")
+
     db.session.commit()
     response = jsonify(movie.to_dict())
+    # Add 'created' response code
     response.status_code = 201
     response.headers['Location'] = url_for('api.get_movie', item_id=movie.id)
     return response
 
 
+@bp.route('/movies/search', methods=['POST'])
+def search():
+    """Return all matches of name and description from elasticsearch index with pagination"""
+    inquiry = request.get_json() or {}
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 10, type=int), 100)
+    matches, _ = Movie.search(inquiry, page, per_page)
+    data = Movie.to_collection_dict(matches, page, per_page, 'api.search')
+    return jsonify(data)
+
+
 @bp.route('/movies/<int:item_id>', methods=['PUT'])
 @token_auth.login_required
 def update_movie(item_id):
-    """Change any of movie's fields except id or 404"""
+    """Change any of movies fields except id or 404"""
     movie = Movie.query.get_or_404(item_id)
+    current_user = token_auth.current_user()
     data = request.get_json() or {}
     if 'name' in data and data['name'] != movie.name and \
             Movie.query.filter_by(name=data['name']).first():
-        return bad_request('Please use a different username')
-    movie.from_dict(data)
-    db.session.commit()
-    return jsonify(movie.to_dict())
+        return bad_request('Please use a different name')
+    if movie.user_added is current_user or current_user.is_admin:
+        movie.from_dict(data)
+        db.session.commit()
+        return jsonify(movie.to_dict())
+    return error_response(403, "User updating this movie does not have right permissions")
 
 
 @bp.route('/movies/<int:item_id>', methods=['DELETE'])
@@ -87,6 +98,9 @@ def update_movie(item_id):
 def delete_movie(item_id):
     """Delete movie or 404"""
     movie = Movie.query.get_or_404(item_id)
-    db.session.delete(movie)
-    db.session.commit()
-    return jsonify(movie.to_dict())
+    current_user = token_auth.current_user()
+    if movie.user_added is current_user or current_user.is_admin:
+        db.session.delete(movie)
+        db.session.commit()
+        return jsonify(movie.to_dict())
+    return error_response(403, "User deleting this movie does not have right permissions")
