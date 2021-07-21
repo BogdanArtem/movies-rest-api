@@ -41,11 +41,29 @@ curl -X PUT http://0.0.0.0:5000/api/movies/4 -H 'Content-Type: application/json'
 
 ```
 
-### Find Edited Record
+### Sort Movies by rating
 ```bash
-curl -X GET http://0.0.0.0:5000/api/movies/search/dinosaur
-curl -X GET http://0.0.0.0:5000/api/movies/search/epic
-curl -X GET http://0.0.0.0:5000/api/movies/search/mythical%20artefact
+curl -X POST http://0.0.0.0:5000/api/movies/search -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"sort": {"rating": "asc"}}'
+```
+
+### Sort Movies by date
+```curl -X POST http://0.0.0.0:5000/api/movies/search -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"sort": {"date": "desc"}}'
+```
+
+### Find Movies by partial match in all fielsd
+```
+curl -X POST http://0.0.0.0:5000/api/movies/search -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"query: {"query_string": {"query": "sup*", "fields": ["*"]}}}'
+```
+
+### Find Movies by name full math
+```
+curl -X POST http://0.0.0.0:5000/api/movies/search -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"query":{"multi_match": {"query": "Good", "fields": ["name"]}}}'
+```
+
+### Filter movies by date
+```
+curl -X POST http://0.0.0.0:5000/api/movies/search -H 'Content-Type: application/json' -H 'Authorization:Bearer place_for_your_token' -d '{"query": {
+"range":{"date": {"from": "1995", "to": "2000"}}}}'
 ```
 
 ### Delete A Record (authorized users only)
