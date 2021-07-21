@@ -8,6 +8,10 @@ cd movies-rest-api
 docker-compose up
 ```
 
+### Read Docs
+http://0.0.0.0:5000/api/docs
+
+
 ### Get All Movies
 ```bash
 curl -X GET http://0.0.0.0:5000/api/movies

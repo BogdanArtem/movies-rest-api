@@ -77,18 +77,18 @@ def test_add_same_genre(client):
 
     # Add user with repeating username
     req3 = client.post('api/genres', headers={'Authorization': 'Bearer ' + token}, json=genre)
-    assert '400' in req3.status
+    assert '409' in req3.status
 
 
 def test_many_to_many(client):
     """Check many to many relationship between genre and movie"""
     req1 = client.get('api/genres/1')
     assert '200' in req1.status
-    assert 2 == req1.json['genres_count']
+    assert 2 == req1.json['movies_count']
 
     req2 = client.get('api/genres/3')
     assert '200' in req2.status
-    assert 1 == req2.json['genres_count']
+    assert 1 == req2.json['movies_count']
 
     movie1 = {
         'name': 'Twilight',
@@ -110,20 +110,11 @@ def test_many_to_many(client):
 
     req5 = client.get('api/genres/1')
     assert '200' in req5.status
-    assert 3 == req5.json['genres_count'] # +1
+    assert 3 == req5.json['movies_count'] # +1
 
     req6 = client.get('api/genres/3')
     assert '200' in req6.status
-    assert 2 == req6.json['genres_count'] # +1
+    assert 2 == req6.json['movies_count'] # +1
 
     req7 = client.get('api/users/5')
-    assert '200' in req7.status
-    # assert 2 == req7.json['']
-
-    #
-    # assert 1 in req4.json['genres']
-    # assert 2 in req4.json['genres']
-    #
-    # req1 = client.get('api/genres/1')
-    # assert '200' in req1.status
-    # assert 3 == req1.json['genres_count']
+    assert '401' in req7.status

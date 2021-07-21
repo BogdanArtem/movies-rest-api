@@ -71,9 +71,9 @@ class PaginatedAPIMixin:
             },
             '_links': {
                 'self': url_for(endpoint, page=page, per_page=per_page, **kwargs),
-                'next': url_for(endpoint, page=page + 1, per_page=per_page, **kwargs) \
+                'next': url_for(endpoint, page=page + 1, per_page=per_page, **kwargs)
                     if resources.has_next else None,
-                'prev': url_for(endpoint, page=page - 1, per_page=per_page, **kwargs) \
+                'prev': url_for(endpoint, page=page - 1, per_page=per_page, **kwargs)
                     if resources.has_prev else None
             }
         }
@@ -144,10 +144,12 @@ class User(PaginatedAPIMixin, db.Model):
         }
         return data
 
-    def from_dict(self, data, new_user=False):
+    def from_dict(self, data, new_user=False, admin=False):
         """Create object from dictionary"""
         for field in ['username', 'email']:
             if field in data:
+                setattr(self, field, data[field])
+            if admin and 'is_admin' in data:
                 setattr(self, field, data[field])
             if new_user and 'password' in data:
                 self.set_password(data['password'])
@@ -192,7 +194,6 @@ class Genre(PaginatedAPIMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
 
-
     def to_dict(self):
         """Convert object to dictionary"""
 
@@ -230,8 +231,6 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
     poster_url = db.Column(db.Text, nullable=False)
 
     genres = db.relationship('Genre', secondary=genre_movie,
-                             # primary_join=(genre_movie.c.genre_id == genre_id),
-                             # secondary_join=(genre_movie.c.movie_id == genre_id),
                              backref=db.backref('movies', lazy='dynamic'), lazy='dynamic')
 
     def add_genre(self, genre):
@@ -257,9 +256,10 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
             'date': self.date,
             'description': self.description,
             'rating': self.rating,
-            'user': self.user_added.username,
+            'user': 'unknown' if self.user_id is None else self.user_added.username,
             'genres': [item.name for item in self.genres],
-            'director': self.directed_by.f_name + " " + self.directed_by.l_name,
+            'director': self.directed_by.f_name + " " + self.directed_by.l_name
+            if self.directed_by is not None else 'unknown',
             '_links': {
                 'director': 'unknown' if self.director_id is None else
                 url_for('api.get_director', item_id=self.director_id),

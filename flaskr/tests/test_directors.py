@@ -35,7 +35,7 @@ def test_add_new_director(client):
     req1 = client.post(path='api/directors', json={'f_name': 'Jim', 'l_name': 'Berns'})
     assert '401' in req1.status
 
-    req2 = client.post(path='api/tokens', auth=('Alex', 12345))
+    req2 = client.post(path='api/tokens', auth=('Admin', 12345))
     token = req2.json['token']
     req3 = client.post(path='api/genres', json={'name': 'Fantasy'},
                        headers={'Authorization': 'Bearer ' + token})
@@ -47,7 +47,7 @@ def test_delete_genre(client):
     req1 = client.delete(path='api/genres/1')
     assert '401' in req1.status
 
-    req2 = client.post(path='api/tokens', auth=('Alex', 12345))
+    req2 = client.post(path='api/tokens', auth=('Admin', 12345))
     token = req2.json['token']
     req3 = client.delete(path='api/genres/1', headers={'Authorization': 'Bearer ' + token})
     assert '200' in req3.status
@@ -59,7 +59,7 @@ def test_update_genre(client):
     req1 = client.put(path='api/genres/2', json=data)
     assert '401' in req1.status
 
-    req2 = client.post(path='api/tokens', auth=('Alex', 12345))
+    req2 = client.post(path='api/tokens', auth=('Admin', 12345))
     token = req2.json['token']
     req3 = client.put(path='api/genres/2', headers={'Authorization': 'Bearer ' + token}, json=data)
     assert '200' in req3.status
@@ -69,7 +69,7 @@ def test_add_same_genre(client):
     """Create users with same email and username"""
     data = {'name': 'Cars'}
 
-    req1 = client.post(path='api/tokens', auth=('Alex', 12345))
+    req1 = client.post(path='api/tokens', auth=('Admin', 12345))
     token = req1.json['token']
 
     req2 = client.post('api/genres', json=data, headers={'Authorization': 'Bearer ' + token})
@@ -77,4 +77,4 @@ def test_add_same_genre(client):
 
     # Add user with repeating username
     req3 = client.post('api/genres', json=data, headers={'Authorization': 'Bearer ' + token})
-    assert '400' in req3.status
+    assert '409' in req3.status
