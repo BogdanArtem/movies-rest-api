@@ -11,6 +11,7 @@ from app.search import add_to_index, remove_from_index, query_index
 
 class SearchableMixin:
     """This class allows maintaining indexes for elasticsearch"""
+
     @classmethod
     def search(cls, expression, page, per_page):
         """Adds search in elasticsearch index from model"""
@@ -70,9 +71,9 @@ class PaginatedAPIMixin:
             },
             '_links': {
                 'self': url_for(endpoint, page=page, per_page=per_page, **kwargs),
-                'next': url_for(endpoint, page=page + 1, per_page=per_page, **kwargs) \
+                'next': url_for(endpoint, page=page + 1, per_page=per_page, **kwargs)
                     if resources.has_next else None,
-                'prev': url_for(endpoint, page=page - 1, per_page=per_page, **kwargs) \
+                'prev': url_for(endpoint, page=page - 1, per_page=per_page, **kwargs)
                     if resources.has_prev else None
             }
         }
@@ -88,8 +89,8 @@ genre_movie = db.Table('genre_movie',
 class User(PaginatedAPIMixin, db.Model):
     """User model with support of authentication and pagination"""
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(128), nullable=False)
+    username = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    email = db.Column(db.String(128), nullable=False, index=True, unique=True)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
     pass_hash = db.Column(db.String(128), nullable=False)
     movies = db.relationship('Movie', backref='user_added', lazy='dynamic')
@@ -143,10 +144,12 @@ class User(PaginatedAPIMixin, db.Model):
         }
         return data
 
-    def from_dict(self, data, new_user=False):
+    def from_dict(self, data, new_user=False, admin=False):
         """Create object from dictionary"""
         for field in ['username', 'email']:
             if field in data:
+                setattr(self, field, data[field])
+            if admin and 'is_admin' in data:
                 setattr(self, field, data[field])
             if new_user and 'password' in data:
                 self.set_password(data['password'])
@@ -171,7 +174,7 @@ class Director(PaginatedAPIMixin, db.Model):
             'movies_count': self.directed.count(),
             '_links': {
                 'self': url_for('api.get_director', item_id=self.id),
-                'movies': url_for('api.get_director_movies', item_i=self.id),
+                'movies': url_for('api.get_director_movies', item_id=self.id),
             }
         }
         return data
@@ -190,16 +193,18 @@ class Genre(PaginatedAPIMixin, db.Model):
     """Genre model with movies relationship"""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
-    movies = db.relationship('Movie', secondary=genre_movie,
-                             # primary_join=(genre_movie.c.genre_id == genre_id),
-                             # secondary_join=(genre_movie.c.movie_id == genre_id),
-                             backref=db.backref('genres', lazy='dynamic'), lazy='dynamic')
 
     def to_dict(self):
         """Convert object to dictionary"""
+
         data = {
             'id': self.id,
             'name': self.name,
+            'movies': [movie.name for movie in self.movies],
+            'movies_count': self.movies.count(),
+            '_links': {
+                'movies': url_for('api.get_genre_movies', item_id=self.id)
+            }
         }
         return data
 
@@ -215,33 +220,53 @@ class Genre(PaginatedAPIMixin, db.Model):
 
 class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
     """Movie model with searchable fields and constraints"""
-    __searchable__ = ['name', 'description']
+    __searchable__ = ['name', 'date', 'rating']
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'))
     director_id = db.Column(db.Integer, db.ForeignKey('director.id', ondelete='SET NULL'))
     date = db.Column(db.Date, nullable=False)
-    name = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.Text)
-    rating = db.Column(db.Integer, nullable=False)
-    poster_url = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(50), nullable=False, index=True, unique=True)
+    description = db.Column(db.Text, index=True)
+    rating = db.Column(db.Integer, db.CheckConstraint('rating <= 10 AND rating >= 0'), nullable=False)
+    poster_url = db.Column(db.Text, nullable=False)
 
-    check = db.CheckConstraint('rating <= 10 AND rating >= 0')
+    genres = db.relationship('Genre', secondary=genre_movie,
+                             backref=db.backref('movies', lazy='dynamic'), lazy='dynamic')
+
+    def add_genre(self, genre):
+        """Add new genre to the model"""
+        if not self.has_genre(genre):
+            self.genres.append(genre)
+
+    def remove_genre(self, genre):
+        """Remove genre from"""
+        if self.has_genre(genre):
+            self.genres.remove(genre)
+
+    def has_genre(self, genre):
+        """Check that movie relates to genre"""
+        return genre in list(self.genres)
 
     def to_dict(self):
         """Convert object to dictionary"""
+
         data = {
             'id': self.id,
             'name': self.name,
             'date': self.date,
             'description': self.description,
             'rating': self.rating,
-            'user': self.user_id,
+            'user': 'unknown' if self.user_id is None else self.user_added.username,
+            'genres': [item.name for item in self.genres],
+            'director': self.directed_by.f_name + " " + self.directed_by.l_name
+            if self.directed_by is not None else 'unknown',
             '_links': {
-                'self': url_for('api.get_director', item_id=self.director_id),
-                'user': url_for('api.get_director_movies', item_id=self.director_id),
-                'director': url_for('api.get_director_movies', item_id=self.director_id),
-                # 'genres'
-                'poster_url': self.poster_url
+                'director': 'unknown' if self.director_id is None else
+                url_for('api.get_director', item_id=self.director_id),
+                'user': 'unknown' if self.user_id is None else
+                url_for('api.get_user', item_id=self.user_id),
+                'poster_url': self.poster_url,
+                'genres': url_for('api.get_movie_genres', item_id=self.id)
             }
         }
         return data
@@ -249,8 +274,16 @@ class Movie(SearchableMixin, PaginatedAPIMixin, db.Model):
     def from_dict(self, data):
         """Convert dictionary to object"""
         for field in ['name', 'date', 'description', 'rating',
-                      'user', 'director_id', 'user_id', 'poster_url']:
-            if field in data:
+                      'user', 'director_id', 'user_id', 'poster_url', 'genres']:
+            # Sqlite fix
+            if field in data and field == 'date':
+                date = datetime.strptime(data[field], '%Y-%m-%d')
+                setattr(self, field, date)
+            elif field in data and field == 'genres':
+                for genre_id in data.get('genres'):
+                    genre = Genre.query.get(genre_id)
+                    self.add_genre(genre)
+            elif field in data:
                 setattr(self, field, data[field])
 
     def __repr__(self):

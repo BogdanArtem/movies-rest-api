@@ -14,70 +14,293 @@
   },
   "servers": [
     {
-      "url": "https://localhost/api/docs",
+      "url": "https://virtserver.swaggerhub.com/nix-education/Movies/0.0.1",
       "description": "SwaggerHub API Auto Mocking"
+    },
+    {
+      "url": "http://0.0.0.0:5000/api",
+      "description": "Development enviroment"
     }
   ],
   "tags": [
     {
       "name": "admins",
-      "description": "Secured Admin-only calls"
+      "description": "Secured Admin-only calls (including registered and anonyms)"
     },
     {
       "name": "registered",
-      "description": "Operations available to registred users"
+      "description": "Operations available to registred users (including anonyms)"
     },
     {
-      "name": "public",
+      "name": "anonyms",
       "description": "Operations avaliable to any user"
     }
   ],
   "paths": {
+    "/tokens": {
+      "post": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Recieve token",
+        "description": "Generating token for current user. Add this token to header Authorization Bearer for requests requireing registration\n",
+        "operationId": "getToken",
+        "responses": {
+          "200": {
+            "description": "Successfull token generation"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "delete token",
+        "description": "Delete currrent token session for authenticated user\n",
+        "operationId": "revokeToken",
+        "responses": {
+          "204": {
+            "description": "token has been successfully deleted"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ]
+      }
+    },
     "/users": {
       "get": {
         "tags": [
           "admins"
         ],
-        "summary": "searches inventory",
-        "description": "By passing in the appropriate options, you can search for\navailable inventory in the system\n",
-        "operationId": "searchInventory",
+        "summary": "Get all the users",
+        "description": "Using this endpoint, you can search for\nall registered users in the system\n",
+        "operationId": "getAllUsers",
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "403": {
+            "description": "The client did not have permission to access the requested resource."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "register a new user",
+        "description": "Only admins can create new admins",
+        "requestBody": {
+          "description": "User example to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "new user created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "409": {
+            "description": "username or email dublication"
+          }
+        }
+      }
+    },
+    "/users/{Id}": {
+      "get": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Find personal data by id",
         "parameters": [
           {
-            "name": "searchString",
-            "in": "query",
-            "description": "pass an optional search string for looking up inventory",
-            "required": false,
-            "style": "form",
-            "explode": true,
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
             "schema": {
-              "type": "string"
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "request successfully completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
             }
           },
-          {
-            "name": "skip",
-            "in": "query",
-            "description": "number of records to skip for pagination",
-            "required": false,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "minimum": 0,
-              "type": "integer",
-              "format": "int32"
-            }
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
           },
+          "403": {
+            "description": "The client did not have permission to access the requested resource."
+          },
+          "404": {
+            "description": "user not not found"
+          }
+        },
+        "security": [
           {
-            "name": "limit",
-            "in": "query",
-            "description": "maximum number of records to return",
-            "required": false,
-            "style": "form",
-            "explode": true,
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Change personal data",
+        "description": "User is allowed to change it's own data, except admin attribute. Admin can change anything",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
             "schema": {
-              "maximum": 50,
-              "minimum": 0,
-              "type": "integer",
-              "format": "int32"
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User has been successfully modified"
+          },
+          "400": {
+            "description": "Invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "403": {
+            "description": "You are not allowed to change admin attribute"
+          },
+          "404": {
+            "description": "user not not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Delete personal data",
+        "description": "Change user's own data",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User has been successfully deleted"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "404": {
+            "description": "user not not found"
+          },
+          "409": {
+            "description": "item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{Id}/movies": {
+      "get": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Find user by id",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
             }
           }
         ],
@@ -95,18 +318,51 @@
               }
             }
           },
-          "400": {
-            "description": "bad input parameter"
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "403": {
+            "description": "The client did not have permission to access the requested resource."
+          },
+          "404": {
+            "description": "User not not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/movies": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find all the movies",
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
           }
         }
       },
       "post": {
         "tags": [
-          "admins"
+          "registered"
         ],
-        "summary": "adds an inventory item",
+        "summary": "Add new movie",
         "description": "Adds an item to the system",
-        "operationId": "addInventory",
         "requestBody": {
           "description": "Inventory item to add",
           "content": {
@@ -124,19 +380,151 @@
           "400": {
             "description": "invalid input, object invalid"
           },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "user already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/movies/{Id}": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find movie by id",
+        "description": "By passing in the movie id, you can retrieve all the movie info\n",
+        "operationId": "searchMovieId",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request Successfully completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Movie"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Change user's movie",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
           "409": {
             "description": "an existing item already exists"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Delete user's movie",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
-    "/movies": {
-      "get": {
+    "/movies/search": {
+      "post": {
         "tags": [
-          "admin"
+          "anonyms"
         ],
-        "summary": "searches movie",
-        "description": "By passing in the movie id, you can retrieve all the movie info\n",
+        "summary": "find movies with sorting and filtering",
+        "description": "\nThis endpoint uses elasticsearch JSON format in request's body to retrieve data.\nDocs for building JSON file may be found here\nSorting https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html\nFiltering https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html\n",
         "operationId": "searchMovie",
         "responses": {
           "200": {
@@ -151,8 +539,376 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "invalid input, object invalid"
           }
         }
+      }
+    },
+    "/genres": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find all the genres",
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "add a new genre",
+        "description": "Adds an item to the system",
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/genres/{Id}": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find genre by id",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Genre not not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Change genre data",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Change user data",
+        "description": "Change user's own data",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "403": {
+            "description": "You don't have permissions"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/directors": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find all the directors",
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "add new director",
+        "description": "Adds an item to the system",
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "403": {
+            "description": "You don't have permissions"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/directors/{Id}": {
+      "get": {
+        "tags": [
+          "anonyms"
+        ],
+        "summary": "find director by id",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "search results matching criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "director not not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Change director",
+        "description": "Change director",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "registered"
+        ],
+        "summary": "Delete director",
+        "description": "Delete director",
+        "parameters": [
+          {
+            "name": "Id",
+            "in": "path",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "item created"
+          },
+          "400": {
+            "description": "invalid input, object invalid"
+          },
+          "401": {
+            "description": "The request did not include an authentication token or the authentication token was expired."
+          },
+          "409": {
+            "description": "an existing item already exists"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -160,48 +916,35 @@
     "schemas": {
       "User": {
         "required": [
-          "f_name",
+          "email",
           "is_admin",
-          "l_name",
-          "pass_hash",
-          "user_id"
+          "password",
+          "username"
         ],
         "type": "object",
         "properties": {
-          "user_id": {
-            "type": "integer",
-            "format": "int32",
-            "example": 15
-          },
-          "f_name": {
+          "username": {
             "type": "string",
-            "example": "John"
-          },
-          "l_name": {
-            "type": "string",
-            "example": "Johnson"
+            "example": "JohnSmith0015"
           },
           "is_admin": {
             "type": "boolean"
           },
-          "pass_hash": {
-            "type": "string",
-            "format": "password"
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
           }
         }
       },
       "Director": {
         "required": [
-          "director_id",
           "f_name",
           "l_name"
         ],
         "type": "object",
         "properties": {
-          "director_id": {
-            "type": "integer",
-            "example": 34
-          },
           "f_name": {
             "type": "string",
             "example": "Steven"
@@ -214,15 +957,10 @@
       },
       "Genre": {
         "required": [
-          "genre_id",
           "name"
         ],
         "type": "object",
         "properties": {
-          "genre_id": {
-            "type": "integer",
-            "example": 22
-          },
           "name": {
             "type": "string",
             "example": "Comedy"
@@ -237,7 +975,6 @@
           "date",
           "director",
           "genre",
-          "movie_id",
           "name",
           "poster_url",
           "rating",
@@ -245,10 +982,6 @@
         ],
         "type": "object",
         "properties": {
-          "movie_id": {
-            "type": "integer",
-            "example": 7
-          },
           "director": {
             "$ref": "#/components/schemas/Director"
           },
@@ -260,8 +993,8 @@
           },
           "date": {
             "type": "string",
-            "format": "date",
-            "example": "2003-01-07"
+            "format": "datetime",
+            "example": "2003-01-7"
           },
           "name": {
             "type": "string",
@@ -280,6 +1013,22 @@
             "format": "url"
           }
         }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "The request did not include an authentication token or the authentication token was expired."
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
       }
     }
   }

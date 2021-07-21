@@ -8,6 +8,10 @@ cd movies-rest-api
 docker-compose up
 ```
 
+### Read Docs
+http://0.0.0.0:5000/api/docs
+
+
 ### Get All Movies
 ```bash
 curl -X GET http://0.0.0.0:5000/api/movies
@@ -44,4 +48,16 @@ curl -X GET http://0.0.0.0:5000/api/movies/search/mythical%20artefact
 ### Delete A Record (authorized users only)
 ```bash
 curl -X DELETE http://0.0.0.0:5000/api/movies/4 -H 'Authorization:Bearer place_for_your_token'
+```
+
+### Test Output
+```bash
+$ pytest
+tests/test_directors.py .....                                                                                                      [ 21%]
+tests/test_genres.py .....                                                                                                         [ 43%]
+tests/test_movies.py ........                                                                                                      [ 78%]
+tests/test_users.py .....                                                                                                          [100%]
+
+==================================================== 23 passed, 23 warnings in 49.31s ====================================================
+
 ```
