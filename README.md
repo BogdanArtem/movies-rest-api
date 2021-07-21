@@ -11,6 +11,9 @@ docker-compose up
 ### Read Docs
 http://0.0.0.0:5000/api/docs
 
+### Users and permissions
+username: Alex, password: 12345 (registered user)
+username: Admin, password: 12345 (admin user)
 
 ### Get All Movies
 ```bash
