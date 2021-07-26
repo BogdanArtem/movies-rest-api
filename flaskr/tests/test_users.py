@@ -25,10 +25,10 @@ def test_get_unauthorized(client):
     req3 = client.get('/api/users/2')
     req4 = client.get('/api/users/3')
 
-    assert '200' in req1.status
-    assert '200' in req2.status
-    assert '200' in req3.status
-    assert '200' in req4.status
+    assert '401' in req1.status
+    assert '401' in req2.status
+    assert '401' in req3.status
+    assert '401' in req4.status
 
 
 def test_register_new_user(client):
@@ -57,8 +57,12 @@ def test_update_user(client):
 
     req2 = client.post(path='api/tokens', auth=('Alex', 12345))
     token = req2.json['token']
+
     req3 = client.put(path='api/users/2', headers={'Authorization': 'Bearer ' + token}, json=data)
-    assert '200' in req3.status
+    assert '403' in req3.status
+
+    req4 = client.put(path='api/users/1', headers={'Authorization': 'Bearer ' + token}, json=data)
+    assert '200' in req4.status
 
 
 def test_add_same_users(client):
@@ -71,9 +75,9 @@ def test_add_same_users(client):
 
     # Add user with repeating username
     req2 = client.post('api/users', json=user2)
-    assert '400' in req2.status
+    assert '409' in req2.status
 
     # Add user with repeating email
     user1['username'] = 'UniqueUsr'
     req3 = client.post('api/users', json=user1)
-    assert '400' in req3.status
+    assert '409' in req3.status

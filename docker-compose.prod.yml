@@ -48,7 +48,7 @@ services:
     volumes:
       - es_volume:/var/lib/elasticsearch/data/
     env_file:
-      - .env
+      - .env.prod
     ports:
       - "9200:9200"
 

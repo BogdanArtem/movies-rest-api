@@ -2,12 +2,13 @@
 
 
 from datetime import date
-from app.models import User, Director, Movie, Genre
 from werkzeug.security import generate_password_hash
+from app.models import User, Director, Movie, Genre
 from app import db
 
 
 def init_db():
+    """Populate database for development"""
     db.create_all()
 
     usr1 = User(username='Alex', email='timsmith@gmail.com',

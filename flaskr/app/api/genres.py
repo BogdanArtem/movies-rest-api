@@ -4,7 +4,7 @@
 from flask import jsonify, request, url_for
 from app.api import bp
 from app import db
-from app.api.errors import bad_request
+from app.api.errors import error_response
 from app.models import Genre
 from app.api.auth import token_auth
 
@@ -41,9 +41,9 @@ def create_genre():
     """Create new genre from post request"""
     data = request.get_json() or {}
     if 'name' not in data:
-        return bad_request('Must include name')
+        return error_response(400, 'Must include name')
     if Genre.query.filter_by(name=data['name']).first():
-        return bad_request('Please use a different name')
+        return error_response(409, 'Please use a different name')
 
     genre = Genre()
     genre.from_dict(data)
@@ -64,7 +64,7 @@ def update_genre(item_id):
     data = request.get_json() or {}
     if 'name' in data and data['name'] != user.name and \
             Genre.query.filter_by(name=data['name']).first():
-        return bad_request('Please use a different genre name')
+        return error_response(400, 'Please use a different genre name')
     user.from_dict(data)
     db.session.commit()
     return jsonify(user.to_dict())
